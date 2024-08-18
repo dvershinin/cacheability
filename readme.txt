@@ -5,7 +5,7 @@ Tags: caching, optimize, performance, pagespeed, core web vitals, seo, speed
 Requires at least: 4.6
 Requires PHP: 7.0
 Tested up to: 6.6
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://www.buymeacoffee.com/dvershinin
@@ -49,5 +49,9 @@ Also, ensure WordPress cron is configured correctly.
 Yes, absolutely. Moreover, Cacheability adds the correct HTTP semantics making browsers and any external caches like Varnish to more efficiently cache your website's content.
 
 == Changelog ==
+
+= 1.1.3 =
+* Fixed some PHP warnings
+
 = 1.1.0 =
 * Added cache warmup feature for updated content

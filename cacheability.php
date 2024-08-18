@@ -2,7 +2,7 @@
 /*
 Plugin Name: Cacheability
 Description: Empowers WordPress with conditional HTTP GET and other cache features
-Version: 1.1.2
+Version: 1.1.3
 Author: Danila Vershinin
 Author URI: https://github.com/dvershinin
 License: GPLv2
@@ -13,10 +13,10 @@ add_action('wp', function() {
 
     /**
      * Fix Soft 404s
-     * WordPress emits soft 404 on empty search results or a invalid tag page, e.g.
+     * WordPress emits soft 404 on empty search results or an invalid tag page, e.g.,
      * https://www.example.com/?s=foo *always* returns http status code 200
      * https://www.example.com/tag/nonexistent_shit returns http status code 200
-     * This fixes WordPress and returns proper 404 header there
+     * This fixes WordPress and returns proper `404` header there
     **/
 
     if ( (is_search() || is_tag()) && !have_posts() ) {
@@ -37,6 +37,10 @@ add_action('wp', function() {
     }
 
     $post = get_queried_object();
+
+	if (!$post) {
+		return;
+	}
 
     # use post's last modified date, unless there's a comment after modification
     $last_modified_gmt = $post->post_modified_gmt;
