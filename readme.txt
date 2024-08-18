@@ -1,7 +1,7 @@
 === Cacheability ===
 
 Contributors: dvershinin
-Tags: caching, optimize, performance, pagespeed, core web vitals, seo, speed, varnish
+Tags: caching, optimize, performance, pagespeed, Core Web Vitals, seo, speed, varnish
 Requires at least: 4.6
 Requires PHP: 7.0
 Tested up to: 6.6
@@ -12,7 +12,7 @@ Donate link: https://www.buymeacoffee.com/dvershinin
 
 == Description ==
 
-Cacheability improves your website loading time by making it a well-behaving HTTP citizen.
+Cacheability improves your website loading time by making it a well-behaved HTTP citizen.
 
 == Plugin Features ==
 
@@ -22,15 +22,15 @@ Cacheability adds conditional HTTP GET feature for WordPress posts. A repeat req
 
 = Fixes soft 404 errors =
 
-WordPress emits soft 404s on empty search results or a invalid tag page, e.g. either `/?s=foo` or `/tag/bar` will always result in a HTTP 200 status code, irrespective of whether any entries were displayed there. Soft 404s are bad for you! Cacheability eliminates them by setting the proper 404 status upon empty search results or tags.
+WordPress emits soft 404s on empty search results or an invalid tag page, e.g., either `/?s=foo` or `/tag/bar` will always result in the HTTP 200 status code, irrespective of whether any entries were displayed there. Soft 404s are bad for you! Cacheability eliminates them by setting the proper 404 HTTP status upon empty search results or tags.
 
 This improves your SEO ranking.
 
 = Warming cache for updated content =
 
-Every time you edit a WordPress post, your cache is cleared in many places. The post page is cleared, the homepage is cleared, the category, feeds, etc., etc. You edited just a *single* post or page but your cache is cleared in *many* places!
+Every time you edit a WordPress post, your cache is cleared in many places. The post page is cleared, the homepage is cleared, the category, feeds, etc., etc. You edited just a *single* post or page, but your cache is cleared in *many* places!
 
-This is cool because you don't want stale content on your website. But it's not cool to make your next visitors facing slow pages!
+This is cool because you don't want stale content on your website. But it's not cool to make your next visitors face slow pages!
 
 Cacheability automatically warms up the pages which were purged from cache:
 

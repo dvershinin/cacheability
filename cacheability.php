@@ -120,7 +120,8 @@ add_action( 'after_purge_url', function ($parsed_url, $purgeme, $response, $head
         return;
     }
 
-    $parsed_url = str_replace( 'http://', 'https://', $parsed_url );
+	/** @noinspection HttpUrlsUsage */
+	$parsed_url = str_replace( 'http://', 'https://', $parsed_url );
 
     wp_schedule_single_event( time(), 'cacheability_warm_event', array( $parsed_url ) );
 
