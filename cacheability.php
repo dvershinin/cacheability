@@ -2,7 +2,7 @@
 /*
 Plugin Name: Cacheability
 Description: Empowers WordPress with conditional HTTP GET and other cache features
-Version: 1.1.3
+Version: 1.1.5
 Author: Danila Vershinin
 Author URI: https://github.com/dvershinin
 License: GPLv2

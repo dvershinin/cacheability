@@ -1,11 +1,11 @@
 === Cacheability ===
 
 Contributors: dvershinin
-Tags: caching, optimize, performance, pagespeed, core web vitals, seo, speed
+Tags: caching, optimize, performance, pagespeed, core web vitals, seo, speed, varnish
 Requires at least: 4.6
 Requires PHP: 7.0
 Tested up to: 6.6
-Stable tag: 1.1.3
+Stable tag: 1.1.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://www.buymeacoffee.com/dvershinin
