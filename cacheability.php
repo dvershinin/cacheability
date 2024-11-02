@@ -2,7 +2,7 @@
 /*
 Plugin Name: Cacheability
 Description: Empowers WordPress with conditional HTTP GET and other cache features
-Version: 1.1.5
+Version: 1.1.6
 Author: Danila Vershinin
 Author URI: https://github.com/dvershinin
 License: GPLv2
@@ -115,7 +115,9 @@ add_action( 'cacheability_warm_event', function($url) {
 
 
 # Schedule a warm event after purging a URL
-add_action( 'after_purge_url', function ($parsed_url, $purgeme, $response, $headers) {
+# Older versions of Proxy Cache Purge plugin, and some WP-Rocket integrations may fire this hook without
+# passing the response and headers arguments. So we need to make them optional to avoid fatal errors.
+add_action( 'after_purge_url', function ($parsed_url, $purgeme, $response = null, $headers = array()) {
     if ($headers['X-Purge-Method'] != 'default') {
         return;
     }
