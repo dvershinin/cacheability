@@ -4,7 +4,7 @@ Contributors: dvershinin
 Tags: caching, optimize, performance, pagespeed, Core Web Vitals, seo, speed, varnish
 Requires at least: 4.6
 Requires PHP: 7.0
-Tested up to: 6.6
+Tested up to: 6.7
 Stable tag: 1.1.6
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
