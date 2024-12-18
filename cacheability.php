@@ -2,7 +2,7 @@
 /*
 Plugin Name: Cacheability
 Description: Empowers WordPress with conditional HTTP GET and other cache features
-Version: 1.1.6
+Version: 1.1.7
 Author: Danila Vershinin
 Author URI: https://github.com/dvershinin
 License: GPLv2
@@ -12,7 +12,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 add_action('wp', function() {
 
     /**
-     * Fix Soft 404s
+     * Fix Soft 404 errors
      * WordPress emits soft 404 on empty search results or an invalid tag page, e.g.,
      * https://www.example.com/?s=foo *always* returns http status code 200
      * https://www.example.com/tag/nonexistent_shit returns http status code 200
@@ -118,7 +118,8 @@ add_action( 'cacheability_warm_event', function($url) {
 # Older versions of Proxy Cache Purge plugin, and some WP-Rocket integrations may fire this hook without
 # passing the response and headers arguments. So we need to make them optional to avoid fatal errors.
 add_action( 'after_purge_url', function ($parsed_url, $purgeme, $response = null, $headers = array()) {
-    if ($headers['X-Purge-Method'] != 'default') {
+	// When the purge method is other than default, we may not know what to warm as $parsed_url may be a regex
+    if (isset($headers['X-Purge-Method']) && $headers['X-Purge-Method'] != 'default') {
         return;
     }
 
