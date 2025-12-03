@@ -6,10 +6,19 @@ Version: 1.1.7
 Author: Danila Vershinin
 Author URI: https://github.com/dvershinin
 License: GPLv2
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
-*/
+    License URI: https://www.gnu.org/licenses/gpl-2.0.html
+    */
 
-add_action('wp', function() {
+// Initialize ESI support
+require_once __DIR__ . '/includes/class-cacheability-esi.php';
+Cacheability_ESI::init();
+
+// Include pluggable functions override
+if ( ! function_exists( 'wp_nonce_field' ) && file_exists( __DIR__ . '/includes/pluggable-esi.php' ) ) {
+    require_once __DIR__ . '/includes/pluggable-esi.php';
+}
+
+    add_action('wp', function() {
 
     /**
      * Fix Soft 404 errors
