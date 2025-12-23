@@ -1,159 +1,320 @@
 <?php
-/*
-Plugin Name: Cacheability
-Description: Empowers WordPress with conditional HTTP GET and other cache features
-Version: 1.1.7
-Author: Danila Vershinin
-Author URI: https://github.com/dvershinin
-License: GPLv2
-    License URI: https://www.gnu.org/licenses/gpl-2.0.html
-    */
+/**
+ * Plugin Name: Cacheability
+ * Plugin URI: https://wordpress.org/plugins/cacheability/
+ * Description: HTTP optimization for WordPress. Fixes soft 404s and adds proper cache headers. Upgrade to Pro for cache warming, conditional GET, and ESI.
+ * Version: 2.0.0
+ * Author: Danila Vershinin
+ * Author URI: https://www.getpagespeed.com/
+ * License: GPLv2
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: cacheability
+ * Requires at least: 5.0
+ * Requires PHP: 7.0
+ * Tested up to: 6.7
+ *
+ * @package Cacheability
+ */
 
-// Initialize ESI support
-require_once __DIR__ . '/includes/class-cacheability-esi.php';
-Cacheability_ESI::init();
+defined( 'ABSPATH' ) || exit;
 
-// Include pluggable functions override
-if ( ! function_exists( 'wp_nonce_field' ) && file_exists( __DIR__ . '/includes/pluggable-esi.php' ) ) {
-    require_once __DIR__ . '/includes/pluggable-esi.php';
-}
+/**
+ * Main Cacheability class (Free version).
+ */
+class Cacheability {
 
-    add_action('wp', function() {
+	/**
+	 * Pro plugin URL.
+	 */
+	const PRO_URL = 'https://www.getpagespeed.com/web-apps/cacheability-pro';
 
-    /**
-     * Fix Soft 404 errors
-     * WordPress emits soft 404 on empty search results or an invalid tag page, e.g.,
-     * https://www.example.com/?s=foo *always* returns http status code 200
-     * https://www.example.com/tag/nonexistent_shit returns http status code 200
-     * This fixes WordPress and returns proper `404` header there
-    **/
+	/**
+	 * Single instance.
+	 *
+	 * @var Cacheability|null
+	 */
+	private static $instance = null;
 
-    if ( (is_search() || is_tag()) && !have_posts() ) {
-        status_header(404);
-    }
+	/**
+	 * Get single instance.
+	 *
+	 * @return Cacheability
+	 */
+	public static function instance() {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
 
-    /**
-     * Conditional HTTP GET for posts
-     **/
+	/**
+	 * Constructor.
+	 */
+	private function __construct() {
+		// Skip features if Pro is installed - it handles everything.
+		if ( class_exists( 'Cacheability_Pro' ) ) {
+			return;
+		}
 
-    if ( ! is_single() ) {
+		// Free features.
+		add_action( 'wp', array( $this, 'fix_soft_404' ) );
+		add_filter( 'wp_headers', array( $this, 'add_cache_headers' ), 100 );
+
+		// Admin.
+		if ( is_admin() ) {
+			add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
+			add_action( 'admin_notices', array( $this, 'show_pro_notice' ) );
+			add_action( 'wp_ajax_cacheability_dismiss_pro_notice', array( $this, 'dismiss_pro_notice' ) );
+		}
+	}
+
+	/**
+	 * Fix soft 404 errors on empty search/tag/category pages.
+	 *
+	 * WordPress returns 200 OK for empty search results and invalid tag pages,
+	 * which Google marks as "soft 404" errors in Search Console.
+	 */
+	public function fix_soft_404() {
+		if ( is_search() && ! have_posts() ) {
+			status_header( 404 );
         return;
     }
 
-    // previewing does not update post's last-modified but may display different content
-    if ( is_preview() ) {
+		if ( is_tag() && ! have_posts() ) {
+			status_header( 404 );
         return;
     }
 
-    $post = get_queried_object();
-
-	if (!$post) {
+		if ( is_category() && ! have_posts() ) {
+			status_header( 404 );
 		return;
 	}
 
-    # use post's last modified date, unless there's a comment after modification
-    $last_modified_gmt = $post->post_modified_gmt;
+		if ( is_author() && ! have_posts() ) {
+			status_header( 404 );
+			return;
+		}
+	}
 
-    if ($post->comment_count) {
-        $last_comment_after_post_modified = get_comments([
-            'post_id' => $post->ID,
-            'orderby' => 'comment_date_gmt',
-            'status' => 'approve',
-            'number' => 1,
-            'order' => 'DESC',
-        ]);
-        if ($last_comment_after_post_modified) {
-            $last_modified_gmt = $last_comment_after_post_modified[0]->comment_date_gmt;
-        }
-    }
+	/**
+	 * Add Cache-Control headers for proxy caches.
+	 *
+	 * Uses s-maxage to set shared cache TTL without affecting browser caching.
+	 *
+	 * @param array $headers Current headers.
+	 * @return array Modified headers.
+	 */
+	public function add_cache_headers( $headers ) {
+		// Don't override existing Cache-Control.
+		if ( isset( $headers['Cache-Control'] ) ) {
+			return $headers;
+		}
 
-    $last_modified_ts = strtotime($last_modified_gmt);
+		// Don't cache for logged-in users.
+		if ( is_user_logged_in() ) {
+			return $headers;
+		}
 
-    $client_last_modified = sanitize_text_field(empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? '' : trim($_SERVER['HTTP_IF_MODIFIED_SINCE']));
+		// Don't cache admin pages.
+		if ( is_admin() ) {
+			return $headers;
+		}
 
-    // If string is empty, return 0. If not, attempt to parse into a timestamp.
-    $client_modified_timestamp = $client_last_modified ? strtotime($client_last_modified) : 0;
+		// Search/404 = short cache.
+		if ( is_search() || is_404() ) {
+			$headers['Cache-Control'] = 's-maxage=3600';
+			return $headers;
+		}
 
+		// Everything else = long cache (purge plugin handles invalidation).
+		$headers['Cache-Control'] = 's-maxage=31536000';
 
-    if ($client_modified_timestamp >= $last_modified_ts) {
-        status_header(304);
-        # remove any entity header when replying with 304
-        foreach (headers_list() as $header) {
-            $header = trim(explode(':', $header)[0]);
-            header_remove($header);
-        }
-        exit();
-    }
+		return $headers;
+	}
 
-    $last_modified = gmdate('D, d M Y H:i:s', $last_modified_ts);
-    $last_modified .= ' GMT';
+	/**
+	 * Add settings page to admin menu.
+	 */
+	public function add_settings_page() {
+		add_options_page(
+			__( 'Cacheability', 'cacheability' ),
+			__( 'Cacheability', 'cacheability' ),
+			'manage_options',
+			'cacheability',
+			array( $this, 'render_settings_page' )
+		);
+	}
 
-    header('Last-Modified: ' . $last_modified);
+	/**
+	 * Render the settings page.
+	 */
+	public function render_settings_page() {
+		?>
+		<div class="wrap" style="max-width: 700px;">
+			<h1><?php esc_html_e( 'Cacheability', 'cacheability' ); ?></h1>
 
+			<div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 20px; margin-top: 20px;">
+				<h2 style="margin-top: 0;"><?php esc_html_e( 'Active Features', 'cacheability' ); ?></h2>
+				
+				<table class="widefat striped" style="margin-top: 15px;">
+					<tbody>
+						<tr>
+							<td><strong>✅ <?php esc_html_e( 'Soft 404 Fixes', 'cacheability' ); ?></strong></td>
+							<td style="color: green;"><?php esc_html_e( 'Active', 'cacheability' ); ?></td>
+						</tr>
+						<tr>
+							<td>
+								<?php esc_html_e( 'Returns proper 404 status for empty search results, tags, categories, and author archives.', 'cacheability' ); ?>
+							</td>
+							<td></td>
+						</tr>
+						<tr>
+							<td><strong>✅ <?php esc_html_e( 'Cache-Control Headers', 'cacheability' ); ?></strong></td>
+							<td style="color: green;"><?php esc_html_e( 'Active', 'cacheability' ); ?></td>
+						</tr>
+						<tr>
+							<td>
+								<?php esc_html_e( 'Adds s-maxage headers so Varnish/CDN can cache efficiently.', 'cacheability' ); ?>
+							</td>
+							<td></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 
-});
+			<div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); 
+						border-radius: 8px; padding: 24px; margin-top: 20px; color: white;">
+				<h2 style="margin: 0 0 15px; color: white;">
+					⚡ <?php esc_html_e( 'Upgrade to Cacheability Pro', 'cacheability' ); ?>
+				</h2>
+				
+				<p style="opacity: 0.95; margin-bottom: 20px;">
+					<?php esc_html_e( 'Get cache warming, conditional GET (304), and ESI support.', 'cacheability' ); ?>
+				</p>
 
-# Warming pages upon purge
-# proxy cache purge plugin calls this:
-# do_action( 'after_purge_url', $parsed_url, $purgeme, $response, $headers );
-# TODO hook onto "after_full_purge" and warm based on sitemap
-# TODO chunk/spread URL warm over time to reduce CPU usage on smaller boxes
+				<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+					<tr>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
+							<?php esc_html_e( 'Cache Warming', 'cacheability' ); ?>
+						</td>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2); text-align: right;">
+							<span style="background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 3px;">Pro</span>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
+							<?php esc_html_e( 'Conditional GET (304 responses)', 'cacheability' ); ?>
+						</td>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2); text-align: right;">
+							<span style="background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 3px;">Pro</span>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
+							<?php esc_html_e( 'ESI Support (dynamic nonces)', 'cacheability' ); ?>
+						</td>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2); text-align: right;">
+							<span style="background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 3px;">Pro</span>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
+							<?php esc_html_e( 'Rate-Limit Safe Warming', 'cacheability' ); ?>
+						</td>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2); text-align: right;">
+							<span style="background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 3px;">Pro</span>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
+							<?php esc_html_e( 'WP-CLI Commands', 'cacheability' ); ?>
+						</td>
+						<td style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2); text-align: right;">
+							<span style="background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 3px;">Pro</span>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0;">
+							<?php esc_html_e( 'Priority Support', 'cacheability' ); ?>
+						</td>
+						<td style="padding: 8px 0; text-align: right;">
+							<span style="background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 3px;">Pro</span>
+						</td>
+					</tr>
+				</table>
 
-# Create action that will be scheduled upon purging a URL
-add_action( 'cacheability_warm_event', function($url) {
-    wp_remote_get(
-        $url,
-        array(
-            'headers' => array(
-                'accept-encoding' => 'br',
-                'user-agent' => 'wp-proxy-cache-warmer-br',
-            ),
-        )
-    );
+				<a href="<?php echo esc_url( self::PRO_URL ); ?>" 
+				   class="button" 
+				   style="background: #fff; color: #1e3a5f; border: none; padding: 10px 24px; font-weight: 600; font-size: 14px;"
+				   target="_blank">
+					<?php esc_html_e( 'Get Cacheability Pro →', 'cacheability' ); ?>
+				</a>
+			</div>
+		</div>
+		<?php
+	}
 
-    wp_remote_get(
-        $url,
-        array(
-            'headers'   => array(
-                'accept-encoding' => 'gzip',
-                'user-agent' => 'wp-proxy-cache-warmer-gzip',
-            ),
-        )
-    );
-} );
-
-
-# Schedule a warm event after purging a URL
-# Older versions of Proxy Cache Purge plugin, and some WP-Rocket integrations may fire this hook without
-# passing the response and headers arguments. So we need to make them optional to avoid fatal errors.
-add_action( 'after_purge_url', function ($parsed_url, $purgeme, $response = null, $headers = array()) {
-	// When the purge method is other than default, we may not know what to warm as $parsed_url may be a regex
-    if (isset($headers['X-Purge-Method']) && $headers['X-Purge-Method'] != 'default') {
+	/**
+	 * Show upgrade notice (dismissible).
+	 */
+	public function show_pro_notice() {
+		// Don't show if Pro is installed.
+		if ( class_exists( 'Cacheability_Pro' ) ) {
         return;
     }
 
-	/** @noinspection HttpUrlsUsage */
-	$parsed_url = str_replace( 'http://', 'https://', $parsed_url );
+		// Only show on specific pages.
+		$screen = get_current_screen();
+		if ( ! $screen || ! in_array( $screen->id, array( 'plugins', 'settings_page_cacheability' ), true ) ) {
+			return;
+		}
 
-    wp_schedule_single_event( time(), 'cacheability_warm_event', array( $parsed_url ) );
+		// Check if dismissed.
+		if ( get_option( 'cacheability_pro_notice_dismissed' ) ) {
+			return;
+		}
 
-}, $priority = 10, $accepted_args = 4 );
+		// Don't show on our own settings page (has its own upsell).
+		if ( 'settings_page_cacheability' === $screen->id ) {
+			return;
+		}
+		?>
+		<div class="notice notice-info is-dismissible" id="cacheability-pro-notice">
+			<p>
+				<strong>⚡ <?php esc_html_e( 'Cacheability Pro', 'cacheability' ); ?></strong> — 
+				<?php esc_html_e( 'Add cache warming, conditional GET (304), and ESI support.', 'cacheability' ); ?>
+				<a href="<?php echo esc_url( self::PRO_URL ); ?>" target="_blank">
+					<?php esc_html_e( 'Learn more →', 'cacheability' ); ?>
+				</a>
+			</p>
+		</div>
+		<script>
+		jQuery(function($) {
+			$(document).on('click', '#cacheability-pro-notice .notice-dismiss', function() {
+				$.post(ajaxurl, { action: 'cacheability_dismiss_pro_notice' });
+			});
+		});
+		</script>
+		<?php
+	}
 
+	/**
+	 * AJAX handler for dismissing the Pro notice.
+	 */
+	public function dismiss_pro_notice() {
+		update_option( 'cacheability_pro_notice_dismissed', true );
+		wp_die();
+	}
+}
 
-# Add Far Future Cache-Control header to all pages served by WordPress
-# This only does it for shared caches, not for browsers
-add_filter( 'wp_headers', function( $headers) {
+/**
+ * Initialize the plugin.
+ *
+ * @return Cacheability
+ */
+function cacheability() {
+	return Cacheability::instance();
+}
 
-    // Check if the Cache-Control header is already set.
-    if ( ! isset( $headers['Cache-Control'] ) ) {
-        // in search pages, set the s-maxage directive to 1 hour (in seconds).
-        if ( is_search() ) {
-            $headers['Cache-Control'] = 's-maxage=3600';
-        } else {
-            // Set the s-maxage directive to 1 year (in seconds).
-            $headers['Cache-Control'] = 's-maxage=31536000';
-        }
-    }
-
-    return $headers;
-}, 100 );
+// Start the plugin.
+add_action( 'plugins_loaded', 'cacheability', 5 );

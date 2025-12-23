@@ -1,54 +1,93 @@
 === Cacheability ===
 
 Contributors: dvershinin
-Tags: caching, optimize, performance, pagespeed, Core Web Vitals, seo, speed, varnish
-Requires at least: 4.6
+Tags: cache, seo, 404, performance, varnish, nginx, cdn
+Requires at least: 5.0
 Requires PHP: 7.0
-Tested up to: 6.9
-Stable tag: 1.1.7
+Tested up to: 6.7
+Stable tag: 2.0.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://www.buymeacoffee.com/dvershinin
 
+HTTP optimization for WordPress. Fixes soft 404 errors and adds smart cache headers.
+
 == Description ==
 
-Cacheability improves your website loading time by making it a well-behaved HTTP citizen.
+Cacheability makes your WordPress site a better HTTP citizen, improving SEO and cache efficiency.
 
-== Plugin Features ==
+= Free Features =
 
-= Conditional HTTP GET =
+**Soft 404 Fix**
 
-Cacheability adds conditional HTTP GET feature for WordPress posts. A repeat request to a post which wasn't modified, will result in a 304 HTTP response. It quickly tells the browser: "nothing new here" without sending the whole post all over again. This saves the bandwidth and increases performance on both ends.
+WordPress returns HTTP 200 for empty search results, invalid tag pages, and empty category archives. Google marks these as "soft 404" errors in Search Console, hurting your SEO.
 
-= Fixes soft 404 errors =
+Cacheability fixes this by returning proper 404 status codes when:
 
-WordPress emits soft 404s on empty search results or an invalid tag page, e.g., either `/?s=foo` or `/tag/bar` will always result in the HTTP 200 status code, irrespective of whether any entries were displayed there. Soft 404s are bad for you! Cacheability eliminates them by setting the proper 404 HTTP status upon empty search results or tags.
+* Search results are empty (`/?s=nonexistent`)
+* Tag archives are empty (`/tag/nonexistent/`)
+* Category archives are empty
+* Author archives are empty
 
-This improves your SEO ranking.
+**Smart Cache-Control Headers**
 
-= Warming cache for updated content =
+Automatically adds `s-maxage` headers so Varnish, NGINX, and CDNs can cache your pages efficiently without affecting browser caching behavior.
 
-Every time you edit a WordPress post, your cache is cleared in many places. The post page is cleared, the homepage is cleared, the category, feeds, etc., etc. You edited just a *single* post or page, but your cache is cleared in *many* places!
+* Search/404 pages: 1 hour cache
+* All other pages: 1 year cache (your purge plugin handles invalidation)
 
-This is cool because you don't want stale content on your website. But it's not cool to make your next visitors face slow pages!
+= Cacheability Pro =
 
-Cacheability automatically warms up the pages which were purged from cache:
+Upgrade to [Cacheability Pro](https://www.getpagespeed.com/web-apps/cacheability-pro) for advanced features:
 
-* It warms up purged caches as soon as you edit your content, via cron
-* It warms up both Gzip and Brotli versions of cleared pages
+* **Cache Warming** — Automatically warm pages after purging so visitors never hit cold cache
+* **Conditional GET (304)** — Return 304 Not Modified for unchanged content, saving bandwidth
+* **ESI Support** — Cache pages with dynamic nonces (comments, login forms)
+* **Rate-Limit Safe** — Smart request queuing to avoid 429 errors
+* **Sitemap Warming** — Warm all pages from sitemap after full purge
+* **WP-CLI Commands** — `wp cacheability warm` and more
+* **Priority Support** — Get help when you need it
 
-All this allows for more happy visitors that hit your cache, and not slow backend!.
+[Get Cacheability Pro →](https://www.getpagespeed.com/web-apps/cacheability-pro)
 
-This feature requires [Proxy Cache Purge](https://wordpress.org/plugins/varnish-http-purge/) plugin.
-Also, ensure WordPress cron is configured correctly.
+== Installation ==
+
+1. Upload to `/wp-content/plugins/cacheability/`
+2. Activate the plugin through the 'Plugins' menu
+3. That's it! No configuration needed.
+
+The plugin works automatically. You can view the settings page under Settings → Cacheability.
 
 == Frequently Asked Questions ==
 
-= Is it compatible with Full Page Cache plugins? =
+= Is it compatible with caching plugins? =
 
-Yes, absolutely. Moreover, Cacheability adds the correct HTTP semantics making browsers and any external caches like Varnish to more efficiently cache your website's content.
+Yes! Cacheability works alongside any caching solution including WP Super Cache, W3 Total Cache, WP Rocket, Varnish, NGINX FastCGI cache, and CDNs like Cloudflare.
+
+= Does it slow down my site? =
+
+No. Cacheability adds minimal overhead — it just sets proper HTTP headers and status codes.
+
+= What's the difference between free and Pro? =
+
+The free version fixes soft 404s and adds cache headers. Pro adds cache warming (automatically re-caches pages after purging), conditional GET responses (304), and ESI support for dynamic content.
+
+= Do I need Varnish HTTP Purge plugin? =
+
+For the free version, no. For Cacheability Pro's cache warming feature, we recommend [Varnish HTTP Purge](https://wordpress.org/plugins/varnish-http-purge/) or similar purge plugin.
+
+== Screenshots ==
+
+1. Settings page with Pro feature comparison
 
 == Changelog ==
+
+= 2.0.0 =
+* Major update: Streamlined free version
+* Cache warming, conditional GET, and ESI moved to Cacheability Pro
+* Added settings page with Pro feature overview
+* Improved soft 404 detection (now includes category and author archives)
+* Code modernization and cleanup
 
 = 1.1.7 =
 * Fixed a PHP notice when used together with older versions of Varnish HTTP Purge plugin and WP-Rocket integrations
@@ -61,3 +100,11 @@ Yes, absolutely. Moreover, Cacheability adds the correct HTTP semantics making b
 
 = 1.1.0 =
 * Added cache warmup feature for updated content
+
+= 1.0.0 =
+* Initial release
+
+== Upgrade Notice ==
+
+= 2.0.0 =
+Cache warming, conditional GET (304), and ESI features are now part of Cacheability Pro. The free version continues to provide soft 404 fixes and cache headers.

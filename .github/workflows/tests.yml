@@ -1,0 +1,85 @@
+name: Tests
+
+on:
+  push:
+    branches: [ trunk, main ]
+  pull_request:
+    branches: [ trunk, main ]
+  workflow_call:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      COMPOSE_PROJECT_NAME: cacheability
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure pip cache dir exists
+        run: mkdir -p ~/.cache/pip
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('tests/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build tester image (cached)
+        uses: docker/build-push-action@v5
+        with:
+          context: tests
+          file: tests/Dockerfile
+          tags: cacheability/tester:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start DB and WordPress
+        working-directory: tests
+        run: docker compose -p cacheability up -d db wordpress
+
+      - name: Wait for WordPress health
+        working-directory: tests
+        run: |
+          for i in {1..120}; do
+            WP=$(docker inspect -f '{{.State.Health.Status}}' $(docker compose -p cacheability ps -q wordpress) || true)
+            echo "wordpress=$WP"
+            if [ "$WP" = "healthy" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+      - name: WP Setup
+        working-directory: tests
+        run: bash setup.sh
+
+      - name: Run tests (compose up with exit code)
+        working-directory: tests
+        env:
+          WP_URL: http://wordpress
+        run: docker compose -p cacheability up --exit-code-from tester --abort-on-container-exit tester
+
+      - name: Show logs on failure
+        if: failure()
+        working-directory: tests
+        run: |
+          echo "== Docker ps =="
+          docker ps -a || true
+          echo "== Compose ps =="
+          docker compose -p cacheability ps || true
+          echo "== Compose logs (last 500 lines) =="
+          docker compose -p cacheability logs --no-color | tail -n 500 || true
+
+      - name: Teardown
+        if: always()
+        working-directory: tests
+        run: docker compose -p cacheability down -v
+
