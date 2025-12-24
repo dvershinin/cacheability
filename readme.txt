@@ -4,7 +4,7 @@ Contributors: dvershinin
 Tags: cache, seo, 404, performance, varnish, nginx, cdn
 Requires at least: 5.0
 Requires PHP: 7.0
-Tested up to: 6.7
+Tested up to: 6.9
 Stable tag: 2.0.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
