@@ -10,7 +10,7 @@ until docker compose exec -T wordpress curl -sSf http://localhost/wp-admin/insta
   sleep 3
 done
 
-PORT="${TEST_PORT:-8080}"
+PORT="${TEST_PORT:-8089}"
 
 if ! wp core is-installed --url="http://localhost:${PORT}"; then
   wp core install \
