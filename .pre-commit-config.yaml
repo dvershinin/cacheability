@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/digitalpulp/pre-commit-php
+    rev: 1.4.0
+    hooks:
+      - id: php-lint
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '^tests/.*'
+      - id: end-of-file-fixer
+        exclude: '^tests/.*'
+      - id: mixed-line-ending
+        exclude: '^tests/.*'
+      - id: check-yaml
+      - id: check-json
+
+  - repo: local
+    hooks:
+      - id: phpcs
+        name: phpcs
+        entry: bash -c 'if [ -x "$HOME/.composer/vendor/bin/phpcs" ]; then "$HOME/.composer/vendor/bin/phpcs"; elif command -v phpcs &> /dev/null; then phpcs; else echo "phpcs not installed, skipping"; fi'
+        language: system
+        files: '\.php$'
+        exclude: '^(tests/|vendor/)'
+        pass_filenames: false
+
+      - id: phpstan
+        name: phpstan
+        entry: bash -c 'if command -v phpstan &> /dev/null; then phpstan analyse --no-progress; else echo "phpstan not installed, skipping"; fi'
+        language: system
+        files: '\.php$'
+        exclude: '^(tests/|vendor/)'
+        pass_filenames: false

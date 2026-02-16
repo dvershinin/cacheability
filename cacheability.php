@@ -77,18 +77,18 @@ class Cacheability {
 	public function fix_soft_404() {
 		if ( is_search() && ! have_posts() ) {
 			status_header( 404 );
-        return;
-    }
+			return;
+		}
 
 		if ( is_tag() && ! have_posts() ) {
 			status_header( 404 );
-        return;
-    }
+			return;
+		}
 
 		if ( is_category() && ! have_posts() ) {
 			status_header( 404 );
-		return;
-	}
+			return;
+		}
 
 		if ( is_author() && ! have_posts() ) {
 			status_header( 404 );
@@ -122,12 +122,12 @@ class Cacheability {
 
 		// Search/404 = short cache.
 		if ( is_search() || is_404() ) {
-			$headers['Cache-Control'] = 's-maxage=3600';
+			$headers['Cache-Control'] = 'max-age=60, s-maxage=3600';
 			return $headers;
 		}
 
 		// Everything else = long cache (purge plugin handles invalidation).
-		$headers['Cache-Control'] = 's-maxage=31536000';
+		$headers['Cache-Control'] = 'max-age=0, s-maxage=31536000';
 
 		return $headers;
 	}
@@ -155,7 +155,7 @@ class Cacheability {
 
 			<div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 20px; margin-top: 20px;">
 				<h2 style="margin-top: 0;"><?php esc_html_e( 'Active Features', 'cacheability' ); ?></h2>
-				
+
 				<table class="widefat striped" style="margin-top: 15px;">
 					<tbody>
 						<tr>
@@ -182,12 +182,12 @@ class Cacheability {
 				</table>
 			</div>
 
-			<div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); 
+			<div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
 						border-radius: 8px; padding: 24px; margin-top: 20px; color: white;">
 				<h2 style="margin: 0 0 15px; color: white;">
 					⚡ <?php esc_html_e( 'Upgrade to Cacheability Pro', 'cacheability' ); ?>
 				</h2>
-				
+
 				<p style="opacity: 0.95; margin-bottom: 20px;">
 					<?php esc_html_e( 'Get cache warming, conditional GET (304), and ESI support.', 'cacheability' ); ?>
 				</p>
@@ -243,10 +243,10 @@ class Cacheability {
 					</tr>
 				</table>
 
-				<a href="<?php echo esc_url( self::PRO_URL ); ?>" 
-				   class="button" 
-				   style="background: #fff; color: #1e3a5f; border: none; padding: 10px 24px; font-weight: 600; font-size: 14px;"
-				   target="_blank">
+				<a href="<?php echo esc_url( self::PRO_URL ); ?>"
+					class="button"
+					style="background: #fff; color: #1e3a5f; border: none; padding: 10px 24px; font-weight: 600; font-size: 14px;"
+					target="_blank">
 					<?php esc_html_e( 'Get Cacheability Pro →', 'cacheability' ); ?>
 				</a>
 			</div>
@@ -260,8 +260,8 @@ class Cacheability {
 	public function show_pro_notice() {
 		// Don't show if Pro is installed.
 		if ( class_exists( 'Cacheability_Pro' ) ) {
-        return;
-    }
+			return;
+		}
 
 		// Only show on specific pages.
 		$screen = get_current_screen();
@@ -281,7 +281,7 @@ class Cacheability {
 		?>
 		<div class="notice notice-info is-dismissible" id="cacheability-pro-notice">
 			<p>
-				<strong>⚡ <?php esc_html_e( 'Cacheability Pro', 'cacheability' ); ?></strong> — 
+				<strong>⚡ <?php esc_html_e( 'Cacheability Pro', 'cacheability' ); ?></strong> —
 				<?php esc_html_e( 'Add cache warming, conditional GET (304), and ESI support.', 'cacheability' ); ?>
 				<a href="<?php echo esc_url( self::PRO_URL ); ?>" target="_blank">
 					<?php esc_html_e( 'Learn more →', 'cacheability' ); ?>

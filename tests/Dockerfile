@@ -14,3 +14,11 @@ COPY pytest.ini /workspace/tests/pytest.ini
 
 CMD ["pytest", "-q", "-c", "tests/pytest.ini"]
 
+
+
+
+
+
+
+
+

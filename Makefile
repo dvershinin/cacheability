@@ -6,15 +6,15 @@ SHELL := /bin/bash
 # Linting and Static Analysis
 # ============================================================================
 
-lint: phpcs
+lint: phpcs phpstan
 	@echo "All linting checks passed!"
 
 phpcs:
 	@echo "Running PHP CodeSniffer..."
 	@if [ -x "$$HOME/.composer/vendor/bin/phpcs" ]; then \
-		$$HOME/.composer/vendor/bin/phpcs --standard=WordPress --extensions=php cacheability.php; \
+		$$HOME/.composer/vendor/bin/phpcs; \
 	elif command -v phpcs &> /dev/null; then \
-		phpcs --standard=WordPress --extensions=php cacheability.php; \
+		phpcs; \
 	else \
 		echo "phpcs not installed. Install with:"; \
 		echo "  composer global require wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer"; \
@@ -23,12 +23,21 @@ phpcs:
 phpcbf:
 	@echo "Auto-fixing PHP CodeSniffer issues..."
 	@if [ -x "$$HOME/.composer/vendor/bin/phpcbf" ]; then \
-		$$HOME/.composer/vendor/bin/phpcbf --standard=WordPress --extensions=php cacheability.php || true; \
+		$$HOME/.composer/vendor/bin/phpcbf || true; \
 	elif command -v phpcbf &> /dev/null; then \
-		phpcbf --standard=WordPress --extensions=php cacheability.php || true; \
+		phpcbf || true; \
 	else \
 		echo "phpcbf not installed. Install with:"; \
 		echo "  composer global require wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer"; \
+	fi
+
+phpstan:
+	@echo "Running PHPStan..."
+	@if command -v phpstan &> /dev/null; then \
+		phpstan analyse --no-progress; \
+	else \
+		echo "phpstan not installed. Install with:"; \
+		echo "  composer global require phpstan/phpstan"; \
 	fi
 
 # ============================================================================
@@ -65,4 +74,3 @@ clean: down
 	# Remove any leftover test-related volumes if they exist
 	cd tests && volumes=$$(docker volume ls -q | grep -E '(wp_data|db_data)' || true); \
 		if [ -n "$$volumes" ]; then docker volume rm $$volumes; fi
-

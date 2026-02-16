@@ -1,0 +1,14 @@
+parameters:
+    level: 3
+    paths:
+        - cacheability.php
+    excludePaths:
+        - tests/*
+        - vendor/*
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    ignoreErrors:
+        # WordPress functions and classes are not in scope
+        - '#Function (add_action|add_filter|add_options_page|is_admin|is_user_logged_in|is_search|is_404|is_tag|is_category|is_author|have_posts|status_header|get_current_screen|get_option|update_option|wp_die|esc_html_e|esc_url|esc_html|__) not found\.#'
+        - '#Constant ABSPATH not found\.#'
+        - '#Function defined not found\.#'

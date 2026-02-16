@@ -82,4 +82,3 @@ jobs:
         if: always()
         working-directory: tests
         run: docker compose -p cacheability down -v
-

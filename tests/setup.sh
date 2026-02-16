@@ -42,3 +42,11 @@ wp term create category "test-category" --slug=test-category || true
 
 echo "Setup complete. Site at http://localhost:${PORT}"
 
+
+
+
+
+
+
+
+

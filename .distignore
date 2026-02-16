@@ -1,0 +1,12 @@
+/.git
+/.github
+/.pre-commit-config.yaml
+/.distignore
+/.gitignore
+/tests
+/Makefile
+/phpcs.xml.dist
+/phpstan.neon
+/phpstan-bootstrap.php
+/CLAUDE.md
+/.pytest_cache
