@@ -5,7 +5,7 @@ Tags: cache, seo, 404, performance, varnish, nginx, cdn
 Requires at least: 5.0
 Requires PHP: 7.0
 Tested up to: 6.9
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://www.buymeacoffee.com/dvershinin
@@ -81,6 +81,9 @@ For the free version, no. For Cacheability Pro's cache warming feature, we recom
 1. Settings page with Pro feature comparison
 
 == Changelog ==
+
+= 2.0.1 =
+* Fixed duplicate Cache-Control headers when another plugin sets headers via PHP header() function
 
 = 2.0.0 =
 * Major update: Streamlined free version

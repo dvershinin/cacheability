@@ -149,3 +149,32 @@ def test_no_cache_for_logged_in(wait_for_wordpress):
 
     # Anonymous users should get cache headers
     assert cache_control, "Anonymous requests should have Cache-Control header"
+
+
+def test_no_duplicate_cache_control_headers(wait_for_wordpress):
+    """
+    Test that Cacheability doesn't add Cache-Control when another source already set it.
+
+    This simulates another plugin calling header('Cache-Control: ...') directly.
+    Cacheability should detect this via headers_list() and not add a duplicate.
+    """
+    response = requests.get(
+        f"{WP_URL}/wp-json/test/v1/header-conflict",
+        headers=_host_headers()
+    )
+
+    assert response.status_code == 200
+
+    # Count Cache-Control headers (case-insensitive)
+    cache_control_headers = [
+        v for k, v in response.headers.items()
+        if k.lower() == 'cache-control'
+    ]
+
+    # Should only have ONE Cache-Control header
+    assert len(cache_control_headers) == 1, \
+        f"Should have exactly 1 Cache-Control header, got {len(cache_control_headers)}: {cache_control_headers}"
+
+    # And it should be the one set by the test endpoint, not Cacheability's
+    assert cache_control_headers[0] == "no-store, must-revalidate", \
+        f"Cache-Control should be 'no-store, must-revalidate', got: {cache_control_headers[0]}"

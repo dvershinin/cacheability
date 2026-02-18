@@ -28,7 +28,7 @@ repos:
 
       - id: phpstan
         name: phpstan
-        entry: bash -c 'if command -v phpstan &> /dev/null; then phpstan analyse --no-progress; else echo "phpstan not installed, skipping"; fi'
+        entry: bash -c 'if command -v phpstan &> /dev/null; then phpstan analyse --no-progress --memory-limit=512M; else echo "phpstan not installed, skipping"; fi'
         language: system
         files: '\.php$'
         exclude: '^(tests/|vendor/)'

@@ -90,6 +90,16 @@ add_action( 'rest_api_init', function() {
 		},
 		'permission_callback' => '__return_true',
 	) );
+
+	// Endpoint to simulate another plugin setting Cache-Control via header().
+	register_rest_route( 'test/v1', '/header-conflict', array(
+		'methods'             => 'GET',
+		'callback'            => function() {
+			header( 'Cache-Control: no-store, must-revalidate' );
+			return array( 'ok' => true );
+		},
+		'permission_callback' => '__return_true',
+	) );
 } );
 
 
