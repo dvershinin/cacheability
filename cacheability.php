@@ -3,7 +3,7 @@
  * Plugin Name: Cacheability
  * Plugin URI: https://wordpress.org/plugins/cacheability/
  * Description: HTTP optimization for WordPress. Fixes soft 404s and adds proper cache headers. Upgrade to Pro for cache warming, conditional GET, and ESI.
- * Version: 2.0.1
+ * Version: 2.1.0
  * Author: Danila Vershinin
  * Author URI: https://www.getpagespeed.com/
  * License: GPLv2
@@ -59,6 +59,8 @@ class Cacheability {
 		// Free features.
 		add_action( 'wp', array( $this, 'fix_soft_404' ) );
 		add_filter( 'wp_headers', array( $this, 'add_cache_headers' ), 100 );
+		add_filter( 'wpseo_robots', array( $this, 'filter_wpseo_robots' ), 20 );
+		add_filter( 'wp_robots', array( $this, 'filter_wp_robots' ), 20 );
 
 		// Admin.
 		if ( is_admin() ) {
@@ -94,6 +96,60 @@ class Cacheability {
 			status_header( 404 );
 			return;
 		}
+	}
+
+	/**
+	 * Whether the current request is an empty archive that should be marked noindex.
+	 *
+	 * Defense-in-depth complement to fix_soft_404(): if another plugin or theme
+	 * forces HTTP 200 on these views, the noindex meta tag still prevents Google
+	 * from flagging them as "Soft 404".
+	 *
+	 * @return bool
+	 */
+	private function is_empty_archive_or_search() {
+		if ( is_search() ) {
+			return true;
+		}
+
+		if ( is_tag() || is_category() || is_tax() ) {
+			$obj = get_queried_object();
+			if ( $obj instanceof WP_Term && 0 === (int) $obj->count ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Filter Yoast SEO's robots meta string for empty archives and search.
+	 *
+	 * @param string $robots Yoast's existing robots directive.
+	 * @return string
+	 */
+	public function filter_wpseo_robots( $robots ) {
+		return $this->is_empty_archive_or_search() ? 'noindex, follow' : $robots;
+	}
+
+	/**
+	 * Filter WordPress core's wp_robots array for empty archives and search.
+	 *
+	 * Strips index plus the max-* hints (meaningless once noindex is set).
+	 *
+	 * @param array $robots Current robots directives.
+	 * @return array
+	 */
+	public function filter_wp_robots( $robots ) {
+		if ( ! $this->is_empty_archive_or_search() ) {
+			return $robots;
+		}
+
+		unset( $robots['index'], $robots['max-image-preview'], $robots['max-snippet'], $robots['max-video-preview'] );
+		$robots['noindex'] = true;
+		$robots['follow']  = true;
+
+		return $robots;
 	}
 
 	/**
