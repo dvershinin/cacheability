@@ -11,7 +11,7 @@
  * Text Domain: cacheability
  * Requires at least: 5.0
  * Requires PHP: 7.0
- * Tested up to: 6.7
+ * Tested up to: 7.0
  *
  * @package Cacheability
  */
