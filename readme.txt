@@ -5,7 +5,7 @@ Tags: cache, seo, 404, performance, varnish, nginx, cdn
 Requires at least: 5.0
 Requires PHP: 7.0
 Tested up to: 7.0
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://www.buymeacoffee.com/dvershinin
@@ -81,6 +81,9 @@ For the free version, no. For Cacheability Pro's cache warming feature, we recom
 1. Settings page with Pro feature comparison
 
 == Changelog ==
+
+= 2.2.0 =
+* New: `cacheability_skip` filter. Return true to make the plugin get out of the way for a request, so it sets no Cache-Control and a transactional template's own header() (or an earlier wp_headers filter) stays authoritative. Deterministic regardless of output buffering. Use it for payment-success, checkout-confirmation, and other pages that must not inherit the blanket cache header.
 
 = 2.1.0 =
 * New: Prevents Google's "Soft 404" indexing flag on tag/category archives that don't currently have posts assigned, and on search-results pages.

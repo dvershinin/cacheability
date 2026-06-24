@@ -6,6 +6,33 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// --- cacheability_skip opt-out fixtures (test_cache_headers.py) ---
+// A dedicated page whose requests are flagged for the public opt-out filter, so the
+// test can assert the plugin emits no Cache-Control. Keyed on the request path so it
+// fires deterministically at wp_headers time.
+add_filter( 'cacheability_skip', function ( $skip ) {
+	$uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '';
+	if ( false !== strpos( $uri, 'cacheability-skip-test' ) ) {
+		return true;
+	}
+	return $skip;
+} );
+
+add_action( 'init', function () {
+	if ( function_exists( 'is_blog_installed' ) && ! is_blog_installed() ) {
+		return;
+	}
+	if ( ! get_page_by_path( 'cacheability-skip-test' ) ) {
+		wp_insert_post( array(
+			'post_title'   => 'Cacheability Skip Test',
+			'post_name'    => 'cacheability-skip-test',
+			'post_content' => 'This page opts out of caching via the cacheability_skip filter.',
+			'post_status'  => 'publish',
+			'post_type'    => 'page',
+		) );
+	}
+} );
+
 // Register REST API endpoints for testing.
 add_action( 'rest_api_init', function() {
 	// Create a post.
