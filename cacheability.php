@@ -3,7 +3,7 @@
  * Plugin Name: Cacheability
  * Plugin URI: https://wordpress.org/plugins/cacheability/
  * Description: HTTP optimization for WordPress. Fixes soft 404s and adds proper cache headers. Upgrade to Pro for cache warming, conditional GET, and ESI.
- * Version: 2.1.0
+ * Version: 2.2.0
  * Author: Danila Vershinin
  * Author URI: https://www.getpagespeed.com/
  * License: GPLv2
@@ -173,6 +173,18 @@ class Cacheability {
 					return $headers;
 				}
 			}
+		}
+
+		/**
+		 * Explicit per-request opt-out. When a consumer returns true the plugin gets
+		 * out of the way and sets no Cache-Control, leaving a transactional template's
+		 * own header() (or an earlier wp_headers filter) authoritative. Deterministic
+		 * regardless of output buffering, unlike relying on a late header() override.
+		 *
+		 * @param bool $skip Whether to skip Cache-Control management for this request.
+		 */
+		if ( apply_filters( 'cacheability_skip', false ) ) {
+			return $headers;
 		}
 
 		// Don't cache for logged-in users.

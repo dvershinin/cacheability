@@ -151,6 +151,25 @@ def test_no_cache_for_logged_in(wait_for_wordpress):
     assert cache_control, "Anonymous requests should have Cache-Control header"
 
 
+def test_skip_filter_suppresses_cache_control(wait_for_wordpress):
+    """
+    When cacheability_skip returns true, the plugin gets out of the way and sets
+    no Cache-Control, so the blanket s-maxage policy is NOT applied.
+
+    The cacheability-skip-test page is flagged for the opt-out filter by the test
+    control mu-plugin (tests/mu-plugins/test-control.php).
+    """
+    response = follow_redirects_in_container(f"{WP_URL}/cacheability-skip-test/")
+
+    assert response.status_code == 200
+
+    cache_control = response.headers.get("Cache-Control", "")
+
+    # The opt-out must suppress the plugin's blanket proxy-cache policy entirely.
+    assert "s-maxage" not in cache_control, \
+        f"Opted-out page must not get a blanket s-maxage, got: {cache_control}"
+
+
 def test_no_duplicate_cache_control_headers(wait_for_wordpress):
     """
     Test that Cacheability doesn't add Cache-Control when another source already set it.
