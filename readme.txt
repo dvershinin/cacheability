@@ -76,6 +76,12 @@ The free version fixes soft 404s and adds cache headers. Pro adds cache warming 
 
 For the free version, no. For Cacheability Pro's cache warming feature, we recommend [Varnish HTTP Purge](https://wordpress.org/plugins/varnish-http-purge/) or similar purge plugin.
 
+= How do I stop a specific page from being cached? =
+
+Return true from the `cacheability_skip` filter for that request. The plugin then gets out of the way and sets no Cache-Control, so a transactional template's own header() stays authoritative. This is deterministic regardless of PHP output buffering. Example for a payment-success page:
+
+`add_filter( 'cacheability_skip', function ( $skip ) { return is_page( 'checkout-thank-you' ) ? true : $skip; } );`
+
 == Screenshots ==
 
 1. Settings page with Pro feature comparison
