@@ -82,6 +82,10 @@ Return true from the `cacheability_skip` filter for that request. The plugin the
 
 `add_filter( 'cacheability_skip', function ( $skip ) { return is_page( 'checkout-thank-you' ) ? true : $skip; } );`
 
+= Can I keep free features while using only Pro's ESI support? =
+
+With compatible Cacheability Pro, define `CACHEABILITY_PRO_ESI_ONLY` as boolean `true` in wp-config.php before plugins load. Free Cacheability continues to provide cache headers, soft-404 handling and robots behavior. Pro's normal license and ESI settings still apply. Leave the constant unset for the usual full Pro integration.
+
 == Screenshots ==
 
 1. Settings page with Pro feature comparison

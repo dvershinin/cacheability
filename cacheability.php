@@ -51,8 +51,8 @@ class Cacheability {
 	 * Constructor.
 	 */
 	private function __construct() {
-		// Skip features if Pro is installed - it handles everything.
-		if ( class_exists( 'Cacheability_Pro' ) ) {
+		// Pro handles free features unless it explicitly runs in ESI-only mode.
+		if ( class_exists( 'Cacheability_Pro' ) && ( ! defined( 'CACHEABILITY_PRO_ESI_ONLY' ) || true !== CACHEABILITY_PRO_ESI_ONLY ) ) {
 			return;
 		}
 

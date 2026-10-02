@@ -6,6 +6,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// Simulate Pro ownership before regular plugins load, for this request only.
+$cacheability_pro_test_mode = isset( $_GET['cacheability_pro_test_mode'] ) ? $_GET['cacheability_pro_test_mode'] : '';
+if ( in_array( $cacheability_pro_test_mode, array( 'full', 'esi_only' ), true ) ) {
+	class Cacheability_Pro {}
+	if ( 'esi_only' === $cacheability_pro_test_mode ) {
+		define( 'CACHEABILITY_PRO_ESI_ONLY', true );
+	}
+}
+
 // --- cacheability_skip opt-out fixtures (test_cache_headers.py) ---
 // A dedicated page whose requests are flagged for the public opt-out filter, so the
 // test can assert the plugin emits no Cache-Control. Keyed on the request path so it
